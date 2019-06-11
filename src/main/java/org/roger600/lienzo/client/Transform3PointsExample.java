@@ -45,11 +45,6 @@ public class Transform3PointsExample extends BaseExample implements Example
     private              Transform   toTransform;
     private              double[]    transform   = new double[6];
 
-//    public Transform3PointsWidget(int width, int height) {
-//        super(width, height);
-//        init();
-//    }
-
     public Transform3PointsExample(final String title)
     {
         super(title);
