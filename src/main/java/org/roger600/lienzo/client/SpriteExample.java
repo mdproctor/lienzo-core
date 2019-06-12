@@ -17,9 +17,15 @@ import com.ait.lienzo.tools.client.Timer;
 
 public class SpriteExample extends BaseExample implements Example
 {
+    private String imagePath = "classes/org/roger600/lienzo/client/resources/images/coinsprite.png";
+
+    private static final String      TEXT_FONT   = "oblique normal bold";
+
+    private static final int         TEXT_SIZE   = 16;
+
     private final ArrayList<Sprite> m_splist = new ArrayList<>();
 
-    private boolean           m_active = false;
+    private boolean           m_active = true;
 
     public SpriteExample(final String title)
     {
@@ -38,26 +44,10 @@ public class SpriteExample extends BaseExample implements Example
         addSprite(300, 300, layer);
 
         addSprite(400, 100, layer);
-    }
 
-    @Override
-    public void onResize()
-    {
-        super.onResize();
-
-        setLocation();
-
-        layer.batch();
-    }
-
-    private void setLocation()
-    {
-//        int x = width  / 2;
-//
-//        for (int j = 0; j < shapes.length; j++) {
-//            final Shape shape = shapes[j];
-//            shape.setX(x);
-//        }
+        Text text = new Text("Click coins to start/stop the Sprite animations.", TEXT_FONT, TEXT_SIZE);
+        text.setX(10).setY(400).setFillColor("black");
+        layer.add(text);
     }
 
     private final void addSprite(final int x, final int y, final Layer layer)
@@ -72,22 +62,28 @@ public class SpriteExample extends BaseExample implements Example
 
         final String behavior = "spincoin";
 
-        final Sprite sprite = new Sprite("coinsprite.png", tickssec, new SpriteBehaviorMap(behavior, frames.toArray( new BoundingBox[frames.size()])), behavior)
-                .setDraggable(true).setDragMode(DragMode.SAME_LAYER).setX(x).setY(y)
-                .onLoaded(new SpriteLoadedHandler()
-        {
-            @Override
-            public void onSpriteLoaded(final Sprite sprite)
-            {
-                layer.add(sprite);
 
-                if (m_active)
-                {
-                    sprite.play();
-                }
+        final Sprite theSprite = new Sprite(imagePath, tickssec, new SpriteBehaviorMap(behavior, frames.toArray( new BoundingBox[frames.size()])), behavior)
+                .setDraggable(true).setDragMode(DragMode.SAME_LAYER).setX(x).setY(y)
+                .onLoaded((sprite) -> {
+                    layer.add(sprite);
+                    if (m_active)
+                    {
+                        sprite.play();
+                    }
+                });
+
+        theSprite.addNodeMouseClickHandler((e)->{
+            if (m_active)
+            {
+                suspend();
+            }
+            else
+            {
+                activate();
             }
         });
-        m_splist.add(sprite);
+        m_splist.add(theSprite);
     }
 
     public boolean activate()
