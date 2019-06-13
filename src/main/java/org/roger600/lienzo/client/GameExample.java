@@ -381,7 +381,7 @@ public class GameExample extends BaseExample implements Example
         public Bullet(Layer layer, double x, double y, double dx, double dy, double angle) {
             super(layer);
 
-            shape = new Circle(1).setFillColor(ColorName.WHITE);
+            shape = new Circle(2).setFillColor(ColorName.WHITE);
             shape.setX(x).setY(y);
             layer.add(shape);
 
