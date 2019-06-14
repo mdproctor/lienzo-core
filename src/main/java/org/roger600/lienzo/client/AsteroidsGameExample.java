@@ -23,7 +23,7 @@ import elemental2.dom.EventListener;
 import elemental2.dom.HTMLDivElement;
 import elemental2.dom.KeyboardEvent;
 
-public class GameExample extends BaseExample implements Example
+public class AsteroidsGameExample extends BaseExample implements Example
 {
     private static final int   MAX_BULLETS = 6;
 
@@ -48,7 +48,7 @@ public class GameExample extends BaseExample implements Example
         key(keyboardEvent, false);
     };
 
-    public GameExample(final String title)
+    public AsteroidsGameExample(final String title)
     {
         super(title);
     }

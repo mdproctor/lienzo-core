@@ -51,7 +51,7 @@ public class LienzoExamples implements EntryPoint {
                     new DrawImageExample("Draw Image"),
                     new Transform3PointsExample("Transform 3Points"),
                     new SpriteExample("Sprite Example"),
-                    new GameExample("Asteroids Game")
+                    new AsteroidsGameExample("Asteroids Game")
                    );
     }
 
