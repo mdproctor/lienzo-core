@@ -10,16 +10,13 @@ import com.ait.lienzo.client.core.shape.Circle;
 import com.ait.lienzo.client.core.shape.Group;
 import com.ait.lienzo.client.core.shape.IPrimitive;
 import com.ait.lienzo.client.core.shape.Layer;
-import com.ait.lienzo.client.core.shape.Movie;
 import com.ait.lienzo.client.core.shape.PolyLine;
 import com.ait.lienzo.client.core.shape.Polygon;
 import com.ait.lienzo.client.core.shape.Rectangle;
 import com.ait.lienzo.client.core.shape.Text;
 import com.ait.lienzo.client.core.types.Point2DArray;
-import com.ait.lienzo.client.core.types.Shadow;
 import com.ait.lienzo.client.widget.LienzoPanel2;
 import com.ait.lienzo.shared.core.types.ColorName;
-import com.ait.lienzo.shared.core.types.TextAlign;
 
 import elemental2.dom.DomGlobal;
 import elemental2.dom.EventListener;
@@ -28,22 +25,25 @@ import elemental2.dom.KeyboardEvent;
 
 public class GameExample extends BaseExample implements Example
 {
-    private static final int MAX_BULLETS = 6;
+    private static final int   MAX_BULLETS = 6;
 
-    private Ship ship;
-    private ArrayList<Bullet> bullets;
-    private ArrayList<Rock> rocks;
+    private Ship               ship;
+    private ArrayList<Bullet>  bullets;
+    private ArrayList<Rock>    rocks;
 
-    private int score;
-    private Layer scoreLayer;
-    private Text scoreText;
+    private int                score;
+    private Layer              scoreLayer;
+    private Text               scoreText;
 
-    private EventListener keydownListener = (e) -> {
+    private int                numberOfLives;
+    private ArrayList<Polygon> lives;
+
+    private EventListener      keydownListener = (e) -> {
         KeyboardEvent keyboardEvent = (KeyboardEvent) e;
         key(keyboardEvent, true);
     };
 
-    private EventListener keyupListener = (e) -> {
+    private EventListener      keyupListener = (e) -> {
         KeyboardEvent keyboardEvent = (KeyboardEvent) e;
         key(keyboardEvent, false);
     };
@@ -57,18 +57,31 @@ public class GameExample extends BaseExample implements Example
     {
         super.init(panel, topDiv);
 
+        // Install key up/down handlers
+        DomGlobal.window.addEventListener("keydown", keydownListener);
+        DomGlobal.window.addEventListener("keyup", keyupListener);
+
         Layer bgLayer = new Layer();
         Rectangle background = new Rectangle(width, height);
         background.setFillColor(ColorName.BLACK);
         bgLayer.add(background);
         layer.getViewport().setBackgroundLayer(bgLayer);
+    }
+
+    @Override
+    public void run()
+    {
+        numberOfLives = 3;
+        score = 0;
 
         // Create a separate Layer with Text to display the score
         scoreLayer = new Layer();
-        scoreText = new Text("Score: 0", "Courier", 18).setStrokeColor(ColorName.WHITE);
+        scoreText = new Text("Score: 0", "Courier", 18).setStrokeColor(ColorName.WHITE).setFillColor(ColorName.WHITE);
         scoreText.setX(25).setY(25);
         scoreLayer.add(scoreText);
+        drawLives(numberOfLives);
         layer.getScene().add(scoreLayer);
+        scoreLayer.draw();
 
         ship = new Ship(layer);
         bullets = new ArrayList<Bullet>();
@@ -89,12 +102,8 @@ public class GameExample extends BaseExample implements Example
             i++;
         }
 
-        // Install key up/down handlers
-        DomGlobal.window.addEventListener("keydown", keydownListener);
-        DomGlobal.window.addEventListener("keyup", keyupListener);
-
-
         IndefiniteAnimation handle = new IndefiniteAnimation(new AnimationCallback() {
+            private int hit = -1;
 
             @Override
             public void onFrame(IAnimation animation, IAnimationHandle handle) {
@@ -130,20 +139,47 @@ public class GameExample extends BaseExample implements Example
                     }
 
                     // Check if the rock hit the ship
-                    if (rock.hits(ship.getX(), ship.getY(), 5)) {
-                        // Rock hit ship. Change color for now.
-                        // TODO: Ship explodes...
+                    if (rock.hits(ship.getX(), ship.getY(), 5))
+                    {
+                        // Rock hit ship. Rotate colors to simulate explosion
                         ship.setShipColor(nextColor());
+                        if ( hit <= 0 && numberOfLives > 0)
+                        {
+                            drawLives(--numberOfLives);
+                        }
+
+                        hit = 300;
+                    }
+                    else if ( hit >= 0 )
+                    {
+                        ship.setShipColor(nextColor());
+                        hit--;
+                    }
+                    else
+                    {
+                        ship.setShipColor(ColorName.WHITE.getValue());
                     }
                 }
 
                 ship.update();
 
                 layer.batch();
+
+                if (numberOfLives == 0)
+                {
+                    Text gameOverText = new Text("Game Over Press Space To Restart").setStrokeColor(ColorName.CRIMSON).setFillColor(ColorName.CRIMSON);
+                    gameOverText.setX(25).setY(300);
+                    scoreLayer.add(gameOverText);
+                    scoreLayer.draw();
+                    handle.stop();
+                }
             }
 
             private int colorIndex = 0;
-            private String[] colors = { "white", "yellow", "green", "blue" };
+            private String[] colors = { "yellow", "yellow", "yellow", "yellow",
+                                        "orange", "orange", "orange", "orange",
+                                        "red", "red", "red", "red",
+                                        "blueviolet", "blueviolet", "blueviolet", "blueviolet"};
 
             private String nextColor() {
                 colorIndex = (colorIndex + 1) % colors.length;
@@ -152,13 +188,33 @@ public class GameExample extends BaseExample implements Example
 
         });
         handle.run();
-
     }
 
-    @Override
-    public void run()
+    private void drawLives(int numberOfLives)
     {
+        if (lives != null)
+        {
+            for (int i = 0; i < lives.size(); i++)
+            {
+                lives.get(i).removeFromParent();
+            }
+        }
 
+        lives = new ArrayList<Polygon>(numberOfLives);
+
+        int x = 250;
+        for (int i = 0; i < numberOfLives; i++)
+        {
+            Polygon ship = createShip();
+            ship.setY(21);
+            ship.setX(x);
+            ship.setRotationDegrees(180);
+            lives.add(ship);
+            scoreLayer.add(ship);
+            x = x + 25;
+        }
+
+        scoreLayer.batch();
     }
 
     private void addScore(int sc) {
@@ -168,7 +224,6 @@ public class GameExample extends BaseExample implements Example
     }
 
     protected void key(KeyboardEvent event, boolean down) {
-        console.log("event" + event.code);
         String code = event.code;
         switch (code) {
             case "Left": // IE/Edge specific value
@@ -192,7 +247,22 @@ public class GameExample extends BaseExample implements Example
             case "Space": // older browsers
             case "Spacebar": // older browsers
             case " ": // SPACE BAR - Fire bullet
-                if (down && bullets.size() < MAX_BULLETS) {
+                if ( numberOfLives == 0 )
+                {
+                    // remove or null everything, so we can start again.
+                    layer.removeAll();
+                    scoreLayer.removeAll();
+
+                    ship = null;
+                    bullets = null;
+                    rocks = null;
+                    scoreLayer.removeFromParent();
+                    scoreText = null;
+                    lives = null;
+                    run();
+                }
+                else if (down && bullets.size() < MAX_BULLETS)
+                {
                     ship.fire(layer, bullets);
                 }
                 break;
@@ -208,7 +278,7 @@ public class GameExample extends BaseExample implements Example
         }
     }
 
-    public static class Ship extends Falling {
+    public class Ship extends Falling {
 
         private Polygon ship;
         private PolyLine exhaust;
@@ -226,10 +296,7 @@ public class GameExample extends BaseExample implements Example
 
             shape = new Group();
 
-            Point2DArray a = new Point2DArray().pushXY(0, 10).pushXY(5, -6).pushXY(0, -2).pushXY(-5, -6);
-            ship = new Polygon(a);
-            ship.setStrokeColor(ColorName.WHITE);
-            ship.setStrokeWidth(2);
+            ship = createShip();
             shape.add(ship);
 
             Point2DArray p = new Point2DArray().pushXY(2, 0).pushXY(4, -3).pushXY(2, -2).pushXY(0, -5).pushXY(-2, -2).pushXY(-4, -3).pushXY(-2, -0);
@@ -299,7 +366,16 @@ public class GameExample extends BaseExample implements Example
         }
     }
 
-    public static class Rock extends Falling {
+    private Polygon createShip()
+    {
+        Point2DArray a    = new Point2DArray().pushXY(0, 10).pushXY(5, -6).pushXY(0, -2).pushXY(-5, -6);
+        Polygon      ship = new Polygon(a);
+        ship.setStrokeColor(ColorName.WHITE);
+        ship.setStrokeWidth(2);
+        return ship;
+    }
+
+    public class Rock extends Falling {
         private int     size; // 40, 20, 10
         private double  spin; // how fast it spins
         private int     score; // number of points for this rock
@@ -309,13 +385,12 @@ public class GameExample extends BaseExample implements Example
         public Rock(Layer layer, double x, double y, int si) {
             super(layer);
 
+            size = si;
             shape = new Polygon(createPoints(size));
             shape.setStrokeColor(ColorName.WHITE);
             shape.setStrokeWidth(3);
-
             setLocation(x, y);
-
-            size = si;
+            tick(shape);
 
             double angle = Math.random() * Math.PI * 2;
 
@@ -359,8 +434,11 @@ public class GameExample extends BaseExample implements Example
                 a.pushXY(Math.sin(angle) * radius, Math.cos(angle) * radius);
 
                 if (radius > maxRadius)
+                {
                     maxRadius = radius; // track how big the rock is
+                }
             }
+
             maxRadius *= 0.8; // use a slightly smaller size in hit detection
 
             return a;
@@ -371,9 +449,9 @@ public class GameExample extends BaseExample implements Example
         }
     }
 
-    public static class Bullet extends Falling {
-        private static final double SPEED = 2;
-        private static final int    DISTANCE = 300; // how far the bullet flies
+    public class Bullet extends Falling {
+        private static final double SPEED = 4;
+        private static final int    DISTANCE = 400; // how far the bullet flies
 
         private              int    i = 0; // how many ticks the bullet has been flying
         private              Circle shape;
@@ -404,7 +482,7 @@ public class GameExample extends BaseExample implements Example
     }
 
     // Base class for falling objects, i.e. Ship, Bullet and Rock
-    public static class Falling {
+    public class Falling {
         private double x;
         private double y;
         private double dx;
@@ -441,6 +519,8 @@ public class GameExample extends BaseExample implements Example
             long time = System.currentTimeMillis();
 
             if (time - startTime < every) {
+                prim.setX(x);
+                prim.setY(y);
                 return 0;
             }
 
