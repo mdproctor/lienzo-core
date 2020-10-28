@@ -33,6 +33,7 @@
 		<j2cl.version>0.8-SNAPSHOT</j2cl.version>
 		<j2cl.maven.version>0.16-SNAPSHOT</j2cl.maven.version>
 		<org.kie.lienzo.version>7.38.0-SNAPSHOT</org.kie.lienzo.version>
+		<gwt3.cache.dir>${project.basedir}/../target/gwt3BuildCache</gwt3.cache.dir>
 	</properties>
 
 	<repositories>
